@@ -1,29 +1,50 @@
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using BeatFlowApi;
+using BeatFlowApi.Validators;
+using BeatFlowApi.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. CONFIGURAÇÕES (SERVICES)
-builder.Services.AddDbContext<AppDbContext>(options => 
+// ===========================================================
+// 1. SERVICES
+// ===========================================================
+builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=beatflow.db"));
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // Configuração simples para não dar erro de OpenApiInfo
+builder.Services.AddSwaggerGen();
+
+// FluentValidation — registra todos os validators do assembly
+builder.Services.AddScoped<IValidator<Artist>, ArtistValidator>();
+builder.Services.AddScoped<IValidator<Track>, TrackValidator>();
 
 var app = builder.Build();
 
-// 2. INICIALIZAÇÃO DO BANCO E SWAGGER
-using (var scope = app.Services.CreateScope()) {
+// ===========================================================
+// 2. MIDDLEWARE
+// ===========================================================
+app.UseMiddleware<ExceptionMiddleware>();
+
+// ===========================================================
+// 3. BANCO + SWAGGER
+// ===========================================================
+using (var scope = app.Services.CreateScope())
+{
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated();
 }
 
 app.UseSwagger();
-app.UseSwaggerUI(c => {
+app.UseSwaggerUI(c =>
+{
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "BeatFlow API v1");
-    c.RoutePrefix = "swagger"; 
+    c.RoutePrefix = "swagger";
 });
 
-// --- ESTILOS E SCRIPTS (VIBE CODING 2005) ---
+// ===========================================================
+// 4. ESTILOS E SCRIPTS (VIBE CODING 2005)
+// ===========================================================
 string sharedHead = @"
     <meta charset='utf-8'>
     <style>
@@ -70,12 +91,16 @@ string sharedScript = @"
     </script>
 ";
 
-// --- ROTA: HOME ---
-app.MapGet("/", () => {
+// ===========================================================
+// 5. ROTAS HTML
+// ===========================================================
+app.MapGet("/", () =>
+{
     long hits = new Random().NextInt64(1000000000, 9999999999);
     string waveText = "BEM VINDO AO MELHOR SITE DE MUSICA DA NET!!!";
     string rainbowHtml = "";
-    for (int i = 0; i < waveText.Length; i++) {
+    for (int i = 0; i < waveText.Length; i++)
+    {
         char c = waveText[i];
         rainbowHtml += $"<span style='animation-delay: {i * 0.05}s'>{(c == ' ' ? "&nbsp;" : c.ToString())}</span>";
     }
@@ -90,8 +115,8 @@ app.MapGet("/", () => {
                 <div class='rainbow-wave'>{rainbowHtml}</div>
                 <marquee>*** SEJA BEM VINDO AO MELHOR BACKEND DA ROOVER ***</marquee>
                 <div class='link-container'>
-                    <a href='/artists-page' class='old-school'>>>> VER ARTISTAS <<<</a>
-                    <a href='/swagger' class='old-school'>>> Swagger <<</a>
+                    <a href='/artists-page' class='old-school'>&gt;&gt;&gt; VER ARTISTAS &lt;&lt;&lt;</a>
+                    <a href='/swagger' class='old-school'>&gt;&gt; Swagger &lt;&lt;</a>
                 </div>
                 <div style='background:#000; color:#0F0; padding:10px; margin-top:20px;'>VISITANTE Nº: {hits:N0}</div>
             </div>
@@ -100,8 +125,8 @@ app.MapGet("/", () => {
     </body></html>", "text/html; charset=utf-8");
 });
 
-// --- ROTA: PÁGINA DE ARTISTAS ---
-app.MapGet("/artists-page", () => {
+app.MapGet("/artists-page", () =>
+{
     return Results.Content($@"
     <html><head>{sharedHead}</head><body>
         <div id='mouse-echo-container'></div>
@@ -116,8 +141,8 @@ app.MapGet("/artists-page", () => {
                     </table>
                 </div>
                 <div style='margin-top:20px;'>
-                    <a href='/' class='old-school'><< VOLTAR</a>
-                    <a href='/swagger' class='old-school'>>> Swagger <<</a>
+                    <a href='/' class='old-school'>&lt;&lt; VOLTAR</a>
+                    <a href='/swagger' class='old-school'>&gt;&gt; Swagger &lt;&lt;</a>
                 </div>
             </div>
             <div class='sidebar'><div class='ad-box'>DANÇA DO SIRI!</div></div>
@@ -126,7 +151,7 @@ app.MapGet("/artists-page", () => {
             async function load() {{
                 const res = await fetch('/artists');
                 const data = await res.json();
-                document.getElementById('tableContent').innerHTML = data.map(a => 
+                document.getElementById('tableContent').innerHTML = data.map(a =>
                     `<tr><td>${{a.id}}</td><td>${{a.name.toUpperCase()}}</td><td>${{a.genre.toUpperCase()}}</td><td><button class='btn-del' onclick='del(${{a.id}})'>[X] EXCLUIR</button></td></tr>`
                 ).join('') || '<tr><td colspan=""4"">Nenhum artista cadastrado.</td></tr>';
             }}
@@ -138,19 +163,38 @@ app.MapGet("/artists-page", () => {
     </body></html>", "text/html; charset=utf-8");
 });
 
-// --- ROTAS API ---
-app.MapGet("/artists", async (AppDbContext db) => await db.Artists.ToListAsync());
-app.MapPost("/artists", async (Artist a, AppDbContext db) => { db.Artists.Add(a); await db.SaveChangesAsync(); return Results.Created($"/artists/{a.Id}", a); });
-app.MapDelete("/artists/{id}", async (int id, AppDbContext db) => {
-    if (await db.Artists.FindAsync(id) is Artist a) { db.Artists.Remove(a); await db.SaveChangesAsync(); return Results.Ok(a); }
-    return Results.NotFound();
+// ===========================================================
+// 6. ROTAS API — ARTISTS
+// ===========================================================
+
+// GET /artists — lista todos
+app.MapGet("/artists", async (AppDbContext db) =>
+    await db.Artists.ToListAsync());
+
+// POST /artists — cria artista com validação
+app.MapPost("/artists", async (Artist artist, AppDbContext db, IValidator<Artist> validator) =>
+{
+    var validation = await validator.ValidateAsync(artist);
+    if (!validation.IsValid)
+    {
+        var errors = validation.Errors.Select(e => e.ErrorMessage);
+        return Results.BadRequest(new { errors });
+    }
+    db.Artists.Add(artist);
+    await db.SaveChangesAsync();
+    return Results.Created($"/artists/{artist.Id}", artist);
+});
+
+// DELETE /artists/{id}
+app.MapDelete("/artists/{id}", async (int id, AppDbContext db) =>
+{
+    if (await db.Artists.FindAsync(id) is Artist artist)
+    {
+        db.Artists.Remove(artist);
+        await db.SaveChangesAsync();
+        return Results.Ok(artist);
+    }
+    return Results.NotFound(new { error = $"Artista com ID {id} não encontrado." });
 });
 
 app.Run();
-
-// --- MODELOS ---
-public class Artist { public int Id { get; set; } public string? Name { get; set; } public string? Genre { get; set; } }
-public class AppDbContext : DbContext {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-    public DbSet<Artist> Artists => Set<Artist>();
-}
