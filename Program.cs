@@ -1,6 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateBootstrapLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // 1. CONFIGURAÇÕES (SERVICES)
 builder.Services.AddDbContext<AppDbContext>(options => 
@@ -10,6 +17,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(); // Configuração simples para não dar erro de OpenApiInfo
 
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 // 2. INICIALIZAÇÃO DO BANCO E SWAGGER
 using (var scope = app.Services.CreateScope()) {
