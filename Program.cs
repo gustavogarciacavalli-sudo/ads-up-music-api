@@ -139,7 +139,47 @@ app.MapGet("/artists-page", () => {
 });
 
 // --- ROTAS API ---
-app.MapGet("/artists", async (AppDbContext db) => await db.Artists.ToListAsync());
+
+// GET /artists?page=1&pageSize=10&genre=rock&sort=asc
+app.MapGet("/artists", async (
+    AppDbContext db,
+    int page = 1,
+    int pageSize = 10,
+    string? genre = null,
+    string sort = "asc") =>
+{
+    // Limita pageSize a no máximo 50
+    pageSize = Math.Min(pageSize, 50);
+    if (page < 1) page = 1;
+
+    var query = db.Artists.AsQueryable();
+
+    // Filtro por gênero (case-insensitive)
+    if (!string.IsNullOrWhiteSpace(genre))
+        query = query.Where(a => a.Genre != null && a.Genre.ToLower() == genre.ToLower());
+
+    // Ordenação por nome
+    query = sort.ToLower() == "desc"
+        ? query.OrderByDescending(a => a.Name)
+        : query.OrderBy(a => a.Name);
+
+    var totalCount = await query.CountAsync();
+
+    var data = await query
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    return Results.Ok(new
+    {
+        page,
+        pageSize,
+        totalCount,
+        totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+        data
+    });
+});
+
 app.MapPost("/artists", async (Artist a, AppDbContext db) => { db.Artists.Add(a); await db.SaveChangesAsync(); return Results.Created($"/artists/{a.Id}", a); });
 app.MapDelete("/artists/{id}", async (int id, AppDbContext db) => {
     if (await db.Artists.FindAsync(id) is Artist a) { db.Artists.Remove(a); await db.SaveChangesAsync(); return Results.Ok(a); }
