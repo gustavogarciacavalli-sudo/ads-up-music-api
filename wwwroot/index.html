@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BeatFlow API - Home</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar"><div class="ad-box">GANHE UM MOTOROLA V3!</div></div>
+        <div class="center-panel">
+            <h1>🎵 BEATFLOW API 🚀</h1>
+            <div class="rainbow-wave">
+                <span style="animation-delay: 0s">B</span>
+                <span style="animation-delay: 0.05s">E</span>
+                <span style="animation-delay: 0.1s">M</span>
+                <span style="animation-delay: 0.15s">&nbsp;</span>
+                <span style="animation-delay: 0.2s">V</span>
+                <span style="animation-delay: 0.25s">I</span>
+                <span style="animation-delay: 0.3s">N</span>
+                <span style="animation-delay: 0.35s">D</span>
+                <span style="animation-delay: 0.4s">O</span>
+            </div>
+            <marquee>*** SEJA BEM VINDO AO MELHOR BACKEND DA ROOVER ***</marquee>
+            
+            <button class="btn-add" onclick="document.getElementById('addModal').style.display='block'">+ CADASTRAR ARTISTA</button>
+
+            <div class="link-container">
+                <a href="/artists.html" class="old-school">>>> VER ARTISTAS <<<</a>
+                <a href="/tracks.html" class="old-school">>>> VER MÚSICAS <<<</a>
+                <a href="/swagger" class="old-school">>> Swagger <<</a>
+            </div>
+        </div>
+        <div class="sidebar"><div class="ad-box" style="background:#0FF;">SITE SEGURO!</div></div>
+    </div>
+
+    <!-- Modal Adicionar Artista -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+            <h2>Cadastrar Artista</h2>
+            <form id="addArtistForm">
+                <div class="form-group">
+                    <label>Nome:</label>
+                    <input type="text" id="artistName" required>
+                </div>
+                <div class="form-group">
+                    <label>Gênero:</label>
+                    <input type="text" id="artistGenre" required>
+                </div>
+                <button type="submit" class="btn-add">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+    <script>
+        document.getElementById('addArtistForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('artistName').value;
+            const genre = document.getElementById('artistGenre').value;
+            await fetch('/artists', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, genre })
+            });
+            alert('Artista cadastrado!');
+            document.getElementById('addModal').style.display='none';
+            e.target.reset();
+        });
+    </script>
+</body>
+</html>

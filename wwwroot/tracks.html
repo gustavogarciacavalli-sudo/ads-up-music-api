@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BeatFlow API - Músicas</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="sidebar"><div class="ad-box" style="background:#F0F; color:#FFF;">BAIXAR MP3!</div></div>
+        <div class="center-panel">
+            <h1>🎵 ÁREA DE MÚSICAS 🎵</h1>
+
+            <div style="background:#000; padding:15px; border:2px double #FFF;">
+                <table class="artist-table">
+                    <thead><tr><th>ID</th><th>TÍTULO</th><th>BPM</th><th>GÊNERO</th><th>ARTISTA ID</th><th>AÇÃO</th></tr></thead>
+                    <tbody id="tableContent"><tr><td colspan="6">Carregando...</td></tr></tbody>
+                </table>
+            </div>
+            <div style="margin-top:20px;">
+                <a href="/index.html" class="old-school"><< VOLTAR</a>
+                <a href="/swagger" class="old-school">>> Swagger <<</a>
+            </div>
+        </div>
+        <div class="sidebar"><div class="ad-box">KLB 100% GRÁTIS!</div></div>
+    </div>
+
+    <script src="/js/script.js"></script>
+    <script>
+        async function load() {
+            const res = await fetch('/tracks');
+            const data = await res.json();
+            document.getElementById('tableContent').innerHTML = data.map(t => 
+                `<tr><td>${t.id}</td><td>${t.title.toUpperCase()}</td><td>${t.bpm}</td><td>${t.genre?.toUpperCase() || ''}</td><td>${t.artistId}</td><td><button class='btn-del' onclick='del(${t.id})'>[X] EXCLUIR</button></td></tr>`
+            ).join('') || '<tr><td colspan="6">Nenhuma música cadastrada.</td></tr>';
+        }
+        async function del(id) {
+            if(confirm('Apagar música?')) { await fetch('/tracks/' + id, { method: 'DELETE' }); load(); }
+        }
+        load();
+    </script>
+</body>
+</html>

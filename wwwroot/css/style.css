@@ -1,0 +1,32 @@
+html, body { margin: 0; padding: 0; background-color: #000; overflow-x: hidden; cursor: default; }
+body { font-family: 'Comic Sans MS', cursive, sans-serif; background-image: url('https://web.archive.org/web/20090829035122/http://geocities.com/Heartland/Acres/9371/backgrounds/stars.gif'); display: flex; justify-content: center; }
+.mouse-clone { position: fixed; width: 22px; height: 22px; pointer-events: none; z-index: 9999; animation: cloneFade 0.8s linear forwards; }
+@keyframes cloneFade { 0% { opacity: 0.8; } 100% { opacity: 0; transform: scale(0.5) translateY(20px); } }
+.main-container { display: flex; width: 1000px; padding: 20px; gap: 10px; align-items: stretch; justify-content: center; }
+.sidebar { width: 150px; display: flex; flex-direction: column; gap: 20px; padding: 10px; flex-shrink: 0; }
+.ad-box { border: 2px solid #F00; background: #FFF; color: #000; font-size: 0.7em; text-align: center; padding: 5px; animation: blinker 0.4s linear infinite; font-weight: bold; }
+.center-panel { width: 600px; background-color: #000080; border: 6px outset #FF00FF; padding: 20px; box-shadow: 15px 15px 0px #444; text-align: center; }
+h1 { font-family: 'Times New Roman', serif; font-size: 3em; color: #FF00FF; text-decoration: underline; margin: 0; }
+.rainbow-wave { font-size: 1.8em; font-weight: bold; display: inline-block; margin: 30px 0; white-space: nowrap; }
+.rainbow-wave span { display: inline-block; animation: rainbow-color 2s linear infinite, hypnotic-cobra 1.2s ease-in-out infinite; min-width: 5px; }
+@keyframes rainbow-color { 0% { color: #F00; } 33% { color: #0F0; } 66% { color: #0FF; } 100% { color: #F0F; } }
+@keyframes hypnotic-cobra { 0%, 100% { transform: translateY(15px); } 50% { transform: translateY(-15px); } }
+marquee { background: #008080; color: #FFF; padding: 8px; border: 2px dashed #FFF; margin: 15px 0; }
+.link-container { border: 3px double #FFF; padding: 15px; background: #000; margin: 15px 0; }
+a.old-school, .btn-del, .btn-add { font-size: 1.1em; color: #0F0; text-decoration: none; font-weight: bold; border: 3px solid #F00; padding: 8px; display: inline-block; background: #000; cursor: pointer; }
+a.old-school:hover, .btn-del:hover, .btn-add:hover { color: #F0F; background: #FF0; transform: scale(1.1); }
+.btn-del { color: #FFF; border-color: #FFF; font-size: 0.7em; padding: 2px 5px; }
+.btn-add { color: #FFF; border-color: #0F0; font-size: 0.9em; padding: 5px 10px; margin-bottom: 10px; }
+.artist-table { width: 100%; border-collapse: collapse; background: #000; color: #0F0; border: 3px inset #FF00FF; margin-top: 20px; }
+.artist-table th { background: #444; color: #FFF; padding: 8px; border: 1px solid #FFF; }
+.artist-table td { padding: 8px; border: 1px solid #333; text-align: left; }
+@keyframes blinker { 50% { opacity: 0; } }
+
+/* Modal Styles */
+.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); }
+.modal-content { background-color: #000080; margin: 10% auto; padding: 20px; border: 6px outset #0F0; width: 400px; color: #FFF; text-align: left; }
+.close { color: #F00; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+.close:hover { color: #FFF; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; color: #0FF; font-weight: bold; }
+.form-group input { width: 100%; padding: 5px; box-sizing: border-box; background: #000; color: #0F0; border: 2px inset #FFF; }
