@@ -1,3 +1,4 @@
+using BeatFlowApi;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,7 +8,29 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=beatflow.db"));
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // Configuração simples para não dar erro de OpenApiInfo
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "BeatFlow API",
+        Version = "v1",
+        Description = "API de gerenciamento de músicas e artistas",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Contato",
+            Email = "contato@beatflow.com"
+        },
+        License = new Microsoft.OpenApi.Models.OpenApiLicense
+        {
+            Name = "MIT License",
+            Url = new Uri("https://opensource.org/licenses/MIT")
+        }
+    });
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
 
 var app = builder.Build();
 
@@ -178,13 +201,20 @@ app.MapGet("/artists", async (
         totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
         data
     });
-});
+})
+.WithSummary("Lista todos os artistas")
+.Produces<object>(200);
 
-app.MapPost("/artists", async (Artist a, AppDbContext db) => { db.Artists.Add(a); await db.SaveChangesAsync(); return Results.Created($"/artists/{a.Id}", a); });
+app.MapPost("/artists", async (Artist a, AppDbContext db) => { db.Artists.Add(a); await db.SaveChangesAsync(); return Results.Created($"/artists/{a.Id}", a); })
+.WithSummary("Cria um novo artista")
+.Produces<Artist>(201);
 app.MapDelete("/artists/{id}", async (int id, AppDbContext db) => {
     if (await db.Artists.FindAsync(id) is Artist a) { db.Artists.Remove(a); await db.SaveChangesAsync(); return Results.Ok(a); }
     return Results.NotFound();
-});
+})
+.WithSummary("Remove um artista pelo ID")
+.Produces<Artist>(200)
+.Produces(404);
 
 // --- ROTAS API — TRACKS ---
 
@@ -195,14 +225,19 @@ app.MapGet("/tracks", async (AppDbContext db, int? artistId) =>
     if (artistId.HasValue)
         query = query.Where(t => t.ArtistId == artistId.Value);
     return await query.ToListAsync();
-});
+})
+.WithSummary("Lista todas as faixas")
+.Produces<List<Track>>(200);
 
 // GET /tracks/{id}  — busca track por ID
 app.MapGet("/tracks/{id}", async (int id, AppDbContext db) =>
 {
     var track = await db.Tracks.FindAsync(id);
     return track is not null ? Results.Ok(track) : Results.NotFound(new { error = $"Track com ID {id} não encontrada." });
-});
+})
+.WithSummary("Busca uma faixa pelo ID")
+.Produces<Track>(200)
+.Produces(404);
 
 // POST /tracks  — cria nova track, valida que o ArtistId existe
 app.MapPost("/tracks", async (Track track, AppDbContext db) =>
@@ -214,7 +249,10 @@ app.MapPost("/tracks", async (Track track, AppDbContext db) =>
     db.Tracks.Add(track);
     await db.SaveChangesAsync();
     return Results.Created($"/tracks/{track.Id}", track);
-});
+})
+.WithSummary("Cria uma nova faixa")
+.Produces<Track>(201)
+.Produces(400);
 
 // PUT /tracks/{id}  — atualiza uma track existente
 app.MapPut("/tracks/{id}", async (int id, Track updated, AppDbContext db) =>
@@ -234,7 +272,11 @@ app.MapPut("/tracks/{id}", async (int id, Track updated, AppDbContext db) =>
 
     await db.SaveChangesAsync();
     return Results.Ok(track);
-});
+})
+.WithSummary("Atualiza uma faixa existente")
+.Produces<Track>(200)
+.Produces(400)
+.Produces(404);
 
 // DELETE /tracks/{id}  — remove a track sem afetar o artista
 app.MapDelete("/tracks/{id}", async (int id, AppDbContext db) =>
@@ -246,13 +288,10 @@ app.MapDelete("/tracks/{id}", async (int id, AppDbContext db) =>
     db.Tracks.Remove(track);
     await db.SaveChangesAsync();
     return Results.Ok(track);
-});
+})
+.WithSummary("Remove uma faixa pelo ID")
+.Produces<Track>(200)
+.Produces(404);
 
 app.Run();
-
-// --- MODELOS ---
-public class Artist { public int Id { get; set; } public string? Name { get; set; } public string? Genre { get; set; } }
-public class AppDbContext : DbContext {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-    public DbSet<Artist> Artists => Set<Artist>();
-}
+
