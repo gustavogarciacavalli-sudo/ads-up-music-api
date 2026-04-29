@@ -1,7 +1,16 @@
+using Serilog;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 // 1. CONFIGURAÇÕES (SERVICES)
 builder.Services.AddDbContext<AppDbContext>(options => 
     options.UseSqlite("Data Source=beatflow.db"));
@@ -17,6 +26,7 @@ using (var scope = app.Services.CreateScope()) {
     db.Database.EnsureCreated();
 }
 
+app.UseSerilogRequestLogging();
 app.UseSwagger();
 app.UseSwaggerUI(c => {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "BeatFlow API v1");
