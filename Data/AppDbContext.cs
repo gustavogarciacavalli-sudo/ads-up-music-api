@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using BeatFlowApi.Models;
 
-namespace BeatFlowApi;
+namespace BeatFlowApi.Data;
 
 public class AppDbContext : DbContext
 {
