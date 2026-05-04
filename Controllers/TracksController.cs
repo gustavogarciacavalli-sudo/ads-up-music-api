@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using BeatFlowApi.Data;
 using BeatFlowApi.Models;
+using BeatFlowApi.DTOs;
 
 namespace BeatFlowApi.Controllers;
 
@@ -10,67 +12,82 @@ namespace BeatFlowApi.Controllers;
 public class TracksController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IMapper _mapper;
 
-    public TracksController(AppDbContext db)
+    public TracksController(AppDbContext db, IMapper mapper)
     {
         _db = db;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(int page = 1, int pageSize = 10, string? genre = null, int? minBpm = null, int? maxBpm = null)
+    public async Task<IActionResult> GetTracks([FromQuery] int? artistId)
     {
-        pageSize = Math.Min(pageSize, 50);
-        var query = _db.Tracks.Include(t => t.Artist).AsQueryable();
-        if (!string.IsNullOrEmpty(genre)) query = query.Where(t => t.Genre.ToLower() == genre.ToLower());
-        if (minBpm.HasValue) query = query.Where(t => t.Bpm >= minBpm.Value);
-        if (maxBpm.HasValue) query = query.Where(t => t.Bpm <= maxBpm.Value);
-        query = query.OrderBy(t => t.Title);
-
-        var total = await query.CountAsync();
-        var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        return Ok(new { Total = total, Page = page, PageSize = pageSize, Data = data });
+        var query = _db.Tracks.AsQueryable();
+        if (artistId.HasValue)
+            query = query.Where(t => t.ArtistId == artistId.Value);
+        
+        var tracks = await query.ToListAsync();
+        var tracksDto = _mapper.Map<List<TrackDto>>(tracks);
+        return Ok(tracksDto);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetTrack(int id)
     {
-        var track = await _db.Tracks.Include(t => t.Artist).FirstOrDefaultAsync(t => t.Id == id);
-        return track is null ? NotFound(new { message = "Faixa não encontrada" }) : Ok(track);
+        var track = await _db.Tracks.FindAsync(id);
+        if (track == null)
+            return NotFound(new { error = $"Track com ID {id} não encontrada." });
+        
+        var trackDto = _mapper.Map<TrackDto>(track);
+        return Ok(trackDto);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Track track)
+    public async Task<IActionResult> CreateTrack([FromBody] TrackDto dto)
     {
-        var artistExists = await _db.Artists.AnyAsync(a => a.Id == track.ArtistId);
-        if (!artistExists) return BadRequest(new { message = "Artista inválido" });
+        var artistExists = await _db.Artists.AnyAsync(a => a.Id == dto.ArtistId);
+        if (!artistExists)
+            return BadRequest(new { error = $"Artista com ID {dto.ArtistId} não encontrado. Informe um ArtistId válido." });
+
+        var track = _mapper.Map<Track>(dto);
         _db.Tracks.Add(track);
         await _db.SaveChangesAsync();
-        return Created($"/tracks/{track.Id}", track);
+        
+        var createdDto = _mapper.Map<TrackDto>(track);
+        return Created($"/tracks/{track.Id}", createdDto);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Track inputTrack)
+    public async Task<IActionResult> UpdateTrack(int id, [FromBody] TrackDto updatedDto)
     {
         var track = await _db.Tracks.FindAsync(id);
-        if (track is null) return NotFound(new { message = "Faixa não encontrada" });
-        var artistExists = await _db.Artists.AnyAsync(a => a.Id == inputTrack.ArtistId);
-        if (!artistExists) return BadRequest(new { message = "Artista inválido" });
+        if (track == null)
+            return NotFound(new { error = $"Track com ID {id} não encontrada." });
 
-        track.Title = inputTrack.Title;
-        track.Bpm = inputTrack.Bpm;
-        track.Genre = inputTrack.Genre;
-        track.ArtistId = inputTrack.ArtistId;
+        var artistExists = await _db.Artists.AnyAsync(a => a.Id == updatedDto.ArtistId);
+        if (!artistExists)
+            return BadRequest(new { error = $"Artista com ID {updatedDto.ArtistId} não encontrado." });
+
+        _mapper.Map(updatedDto, track);
+
         await _db.SaveChangesAsync();
-        return Ok(track);
+        
+        var savedDto = _mapper.Map<TrackDto>(track);
+        return Ok(savedDto);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> DeleteTrack(int id)
     {
         var track = await _db.Tracks.FindAsync(id);
-        if (track is null) return NotFound(new { message = "Faixa não encontrada" });
+        if (track == null)
+            return NotFound(new { error = $"Track com ID {id} não encontrada." });
+
         _db.Tracks.Remove(track);
         await _db.SaveChangesAsync();
-        return Ok(new { message = "Faixa removida com sucesso" });
+        
+        var deletedDto = _mapper.Map<TrackDto>(track);
+        return Ok(deletedDto);
     }
 }

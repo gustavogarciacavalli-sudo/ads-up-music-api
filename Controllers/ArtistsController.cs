@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using BeatFlowApi.Data;
 using BeatFlowApi.Models;
+using BeatFlowApi.DTOs;
 
 namespace BeatFlowApi.Controllers;
 
@@ -10,58 +12,74 @@ namespace BeatFlowApi.Controllers;
 public class ArtistsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IMapper _mapper;
 
-    public ArtistsController(AppDbContext db)
+    public ArtistsController(AppDbContext db, IMapper mapper)
     {
         _db = db;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(int page = 1, int pageSize = 10, string? genre = null, string sort = "asc")
+    public async Task<IActionResult> GetArtists(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? genre = null,
+        [FromQuery] string sort = "asc")
     {
         pageSize = Math.Min(pageSize, 50);
-        var query = _db.Artists.AsQueryable();
-        if (!string.IsNullOrEmpty(genre)) query = query.Where(a => a.Genre.ToLower() == genre.ToLower());
-        query = sort.ToLower() == "desc" ? query.OrderByDescending(a => a.Name) : query.OrderBy(a => a.Name);
-        var total = await query.CountAsync();
-        var data = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        return Ok(new { Total = total, Page = page, PageSize = pageSize, Data = data });
-    }
+        if (page < 1) page = 1;
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        var artist = await _db.Artists.FindAsync(id);
-        return artist is null ? NotFound(new { message = "Artista não encontrado" }) : Ok(artist);
+        var query = _db.Artists.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(genre))
+            query = query.Where(a => a.Genre != null && a.Genre.ToLower() == genre.ToLower());
+
+        query = sort.ToLower() == "desc"
+            ? query.OrderByDescending(a => a.Name)
+            : query.OrderBy(a => a.Name);
+
+        var totalCount = await query.CountAsync();
+
+        var data = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var dataDto = _mapper.Map<List<ArtistDto>>(data);
+
+        return Ok(new
+        {
+            page,
+            pageSize,
+            totalCount,
+            totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
+            data = dataDto
+        });
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Artist artist)
+    public async Task<IActionResult> CreateArtist([FromBody] ArtistDto dto)
     {
+        var artist = _mapper.Map<Artist>(dto);
         _db.Artists.Add(artist);
         await _db.SaveChangesAsync();
-        return Created($"/artists/{artist.Id}", artist);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Artist inputArtist)
-    {
-        var artist = await _db.Artists.FindAsync(id);
-        if (artist is null) return NotFound(new { message = "Artista não encontrado" });
-        artist.Name = inputArtist.Name;
-        artist.Bio = inputArtist.Bio;
-        artist.Genre = inputArtist.Genre;
-        await _db.SaveChangesAsync();
-        return Ok(artist);
+        
+        var createdDto = _mapper.Map<ArtistDto>(artist);
+        return Created($"/artists/{artist.Id}", createdDto);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> DeleteArtist(int id)
     {
-        var artist = await _db.Artists.FindAsync(id);
-        if (artist is null) return NotFound(new { message = "Artista não encontrado" });
-        _db.Artists.Remove(artist);
-        await _db.SaveChangesAsync();
-        return Ok(new { message = "Artista removido com sucesso" });
+        if (await _db.Artists.FindAsync(id) is Artist a)
+        {
+            _db.Artists.Remove(a);
+            await _db.SaveChangesAsync();
+            
+            var deletedDto = _mapper.Map<ArtistDto>(a);
+            return Ok(deletedDto);
+        }
+        return NotFound();
     }
 }
