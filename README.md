@@ -1,122 +1,128 @@
-# 🎵 BeatFlow API - Gestão Musical Pro 🚀
+# 🎵 BeatFlow - Sistema de Gestão Musical 🚀
 
-**Projeto Final – Parte 1** | **Disciplina:** Tópicos Especiais em Sistemas (2026.01)
+**Disciplina:** Tópicos Especiais em Sistemas
 **Professor:** Diogo Deconto
 
 ---
 
 ## 👥 Identificação do Projeto
 
-| Campo        | Informação                              |
-|--------------|-----------------------------------------|
-| **Projeto**  | BeatFlow API                            |
-| **Curso**    | Análise e Desenvolvimento de Sistemas (ADS) |
-| **Integrantes** | Gustavo Henrique Garcia Cavalli      |
-|              | Pedro Henrique Policeno                 |
-|              | Pedro Henrique Frason                   |
-|              | Lucas Cardozo                           |
+- **Curso:** Análise e Desenvolvimento de Sistemas (ADS)
+- **Integrantes:** 
+  - Gustavo Henrique Garcia Cavalli
+  - Pedro Henrique Policeno
+  - Lucas Cardozo
 
 ---
 
 ## 📝 Resumo
 
-> *Escrito com o auxílio de IA (Gemini 1.5 Pro)*
-
-O BeatFlow API é uma solução de backend desenvolvida para centralizar a gestão de ecossistemas musicais.
-Utilizando uma arquitetura moderna baseada em Minimal APIs do .NET 8, o sistema permite o mapeamento
-completo de artistas e sua classificação por gêneros musicais. O projeto foca na integridade de dados
-através de relacionamentos entre entidades e persistência via SQLite, oferecendo uma interface robusta
-para desenvolvedores via Swagger e uma experiência visual nostálgica para o usuário final, unindo a
-eficiência técnica do C# com a estética "Vibe Coding" da Web 1.0.
+O BeatFlow é um sistema completo de gestão musical desenvolvido com backend em .NET 8, banco de dados relacional SQLite e um frontend moderno construído em React Vanilla com TypeScript. O sistema permite o mapeamento e gerenciamento integrado de gêneros, artistas, músicas e playlists, criando um ecossistema musical interconectado e de fácil operação.
 
 ---
 
 ## ⚙️ Funcionalidades
 
-> *Texto produzido com auxílio de IA*
-
-- 🎸 **Gestão de Gêneros Musicais** — Cadastro e listagem de categorias (Rock, Trap, Hip-Hop, etc.)
-- 👤 **CRUD Completo de Artistas** — Inserção, leitura, atualização e exclusão de talentos
-- 🔗 **Vínculo Estruturado** — Associação obrigatória de cada artista a um gênero pré-existente (Relacionamento 1:N)
-- 🌈 **Interface Retro-Futurista** — Front-end funcional com rastro arco-íris e elementos visuais dos anos 2000
-- 📄 **Documentação Automática** — Endpoint interativo via Swagger para testes de integração
+- **Cadastro de gêneros musicais:** Gerenciamento das categorias musicais base.
+- **Cadastro de artistas vinculados a gêneros:** Associação de cada artista ao seu respectivo gênero (Relacionamento 1:N).
+- **Cadastro de músicas vinculadas a artistas:** Inserção de faixas com informações ricas como BPM e duração.
+- **Criação de playlists:** Criação de coleções personalizadas de músicas.
+- **Gestão de playlists (Adição/Remoção):** Inclusão ou exclusão flexível de músicas nas playlists.
+- **Resumo da playlist:** Geração automática de estatísticas da playlist (BPM médio, duração total, contagem de faixas, diversidade de artistas e gêneros).
+- **Dashboard gerencial:** Visão geral estatística do acervo musical no frontend.
+- **Consumo de API:** Frontend React reativo consumindo os endpoints REST do backend.
 
 ---
 
 ## 🔍 Descrição das Funcionalidades
 
-> *Redação elaborada com auxílio de IA*
+### 1. Gêneros
+Permite definir a taxonomia base do sistema. Todo artista precisa estar vinculado a um gênero musical obrigatório para fins de categorização.
 
-### 1. Módulo de Gêneros (Relacionamento)
-O sistema exige que um Gênero seja cadastrado antes do Artista. Isso garante a organização taxonômica
-do banco de dados, permitindo filtragens e buscas por categorias específicas.
+### 2. Artistas
+Responsável pelo cadastro de talentos. O CRUD completo de artistas garante que biografias e nomes possam ser atualizados, refletindo em todo o ecossistema vinculado.
 
-### 2. Operações CRUD de Artistas
-O usuário pode realizar o ciclo completo de gerenciamento:
-- Cadastrar um novo artista vinculado a um gênero
-- Listar todos os registros em uma tabela dinâmica
-- Editar informações de artistas existentes
-- Remover registros obsoletos diretamente pela interface
+### 3. Músicas
+O núcleo do sistema. As faixas cadastradas armazenam metadados valiosos (BPM e Duração) que são essenciais para os cálculos do sistema de playlists. Cada faixa possui um criador (Artista).
 
-### 3. Experiência de Usuário (Vibe Coding)
-A camada visual utiliza Vanilla JavaScript para consumir a API em tempo real. Implementamos efeitos
-psicodélicos (**Mouse Trail Rainbow**) e animações senoidais (**Cobra Wave**) para criar uma identidade
-visual única que remete à era Geocities.
-
-### 4. Persistência com Entity Framework
-Toda a lógica de dados é mediada pelo EF Core, que gerencia a criação do banco SQLite e as relações
-de chave estrangeira entre Artistas e Gêneros de forma automática.
+### 4. Playlists
+A funcionalidade de negócio real do projeto. Em vez de apenas um cadastro simples, a playlist agrupa músicas e gera análises dinâmicas em tempo real, calculando o ritmo médio (BPM) das seleções para ajudar os usuários a criarem a "vibe" perfeita.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-| Camada          | Tecnologia                                        |
-|-----------------|---------------------------------------------------|
-| **Backend**     | C# (.NET 8 Minimal API)                           |
-| **ORM**         | Entity Framework Core                             |
-| **Banco de Dados** | SQLite                                         |
-| **Frontend**    | HTML5, CSS3 (Vibe Coding Style), JavaScript (Fetch API) |
-| **Versionamento** | GitHub                                          |
+- **C#**
+- **.NET 8**
+- **Entity Framework Core**
+- **SQLite**
+- **Swagger**
+- **React**
+- **TypeScript**
+- **React Router**
+- **Axios / Fetch API**
+- **CSS** (Vanilla)
 
 ---
 
-## 🚀 Como Rodar o Projeto
+## 🚀 Como rodar o backend
 
-### Pré-requisitos
+O backend deve ser executado a partir da pasta raiz do repositório onde está localizado o `.csproj`.
 
-- SDK do **.NET 8.0** instalado
-- **Git** configurado
-
-### 1. Clonar o Repositório
 ```bash
-git clone https://github.com/gustavogarciacavalli-sudo/ads-up-music-api.git
-cd ads-up-music-api/BeatFlowApi
-```
-
-### 2. Restaurar Dependências e Executar
-```bash
-# Restaura dependências e instala pacotes (EF/Swagger)
+# 1. Restaure as dependências do .NET
 dotnet restore
 
-# Executa a aplicação
+# 2. Compile e execute o servidor
 dotnet run
 ```
+O backend iniciará na porta configurada (geralmente `http://localhost:5270`). O banco de dados SQLite (`beatflow.db`) será criado automaticamente no startup e populado com dados iniciais se estiver vazio.
 
-### 3. Links de Acesso
+Para testar a API, acesse o Swagger: `http://localhost:5270/swagger`
 
-| Página       | URL                                  |
-|--------------|--------------------------------------|
-| 🏠 Home      | http://localhost:5000                |
-| 🎤 Artistas  | http://localhost:5000/artists-page   |
-| 📄 Swagger   | http://localhost:5000/swagger        |
+---
+
+## 💻 Como rodar o frontend
+
+O frontend foi desenvolvido com Vite e deve ser executado a partir do diretório `frontend`.
+
+```bash
+# 1. Entre no diretório do frontend
+cd frontend
+
+# 2. Instale as dependências do Node.js
+npm install
+
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
+```
+O frontend ficará disponível em `http://localhost:5173`. 
+*(Certifique-se de que o backend já está rodando para que os dados sejam carregados corretamente).*
+
+---
+
+## 🔗 Endpoints Principais
+
+- **Gêneros:**
+  - `GET /api/genres`
+  - `POST /api/genres`
+- **Artistas:**
+  - `GET /api/artists`
+  - `POST /api/artists`
+- **Músicas:**
+  - `GET /api/tracks`
+  - `POST /api/tracks`
+- **Playlists:**
+  - `GET /api/playlists`
+  - `POST /api/playlists`
+  - `POST /api/playlists/{playlistId}/tracks/{trackId}` *(Adiciona música na playlist)*
+  - `DELETE /api/playlists/{playlistId}/tracks/{trackId}` *(Remove música da playlist)*
+  - `GET /api/playlists/{playlistId}/summary` *(Retorna estatísticas da playlist)*
 
 ---
 
 ## 🤖 Uso de IA
 
-| Campo               | Detalhe                                                                 |
-|---------------------|-------------------------------------------------------------------------|
-| **Ferramenta**      | Gemini 3 Flash (Paid Tier)                                              |
-| **Forma de uso**    | Redação técnica das seções de Resumo, Funcionalidades e Descrições; estruturação dos endpoints REST; lógica de estilização do rastro arco-íris via Vibe Coding |
-| **Revisões**        | A equipe revisou os textos gerados para garantir que as funcionalidades descritas correspondiam à implementação em C#, ajustando detalhes do relacionamento entre entidades e a indentação do README |
+- **Ferramenta utilizada:** Antigravity (Google) com IA generativa (Gemini 1.5 Pro / Claude 3.5 Sonnet).
+- **Forma de uso:** A inteligência artificial atuou como apoio pair-programmer na continuação do projeto base. Foi utilizada para a geração rápida do scaffolding do frontend em React TypeScript, refatoração e revisão dos endpoints do backend em .NET 8 (convertendo do .NET 10 original e removendo complexidades desnecessárias como AutoMapper para esta entrega), organização da estrutura de estilos CSS (Vanilla moderno) e auxílio na redação desta documentação e roteiro de apresentação.
+- **Revisões realizadas pela equipe:** A equipe efetuou a verificação arquitetural do código sugerido, realizou os testes manuais end-to-end de integração entre o Frontend React e o Backend C#, certificou-se de que as 4 entidades propostas estavam corretas conforme especificado pelo professor, testou os cálculos de resumo da playlist, e garantiu a ausência de erros de CORS e compilação antes da gravação do vídeo final.

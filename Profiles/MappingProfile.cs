@@ -1,14 +1,5 @@
-using AutoMapper;
-using BeatFlowApi.Models;
-using BeatFlowApi.DTOs;
-
-namespace BeatFlowApi.Profiles;
-
-public class MappingProfile : Profile
+// Este arquivo está obsoleto, AutoMapper foi removido do projeto.
+namespace BeatFlowApi.Profiles
 {
-    public MappingProfile()
-    {
-        CreateMap<Artist, ArtistDto>().ReverseMap();
-        CreateMap<Track, TrackDto>().ReverseMap();
-    }
+    // public class MappingProfile : Profile { ... }
 }
