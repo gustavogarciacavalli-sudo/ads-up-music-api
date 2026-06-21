@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AutoMapper;
 using BeatFlowApi.Data;
 using BeatFlowApi.Models;
 using BeatFlowApi.DTOs;
@@ -8,78 +7,129 @@ using BeatFlowApi.DTOs;
 namespace BeatFlowApi.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class ArtistsController : ControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly IMapper _mapper;
 
-    public ArtistsController(AppDbContext db, IMapper mapper)
+    public ArtistsController(AppDbContext db)
     {
         _db = db;
-        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetArtists(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? genre = null,
-        [FromQuery] string sort = "asc")
+    public async Task<ActionResult<List<ArtistDto>>> GetAll()
     {
-        pageSize = Math.Min(pageSize, 50);
-        if (page < 1) page = 1;
-
-        var query = _db.Artists.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(genre))
-            query = query.Where(a => a.Genre != null && a.Genre.ToLower() == genre.ToLower());
-
-        query = sort.ToLower() == "desc"
-            ? query.OrderByDescending(a => a.Name)
-            : query.OrderBy(a => a.Name);
-
-        var totalCount = await query.CountAsync();
-
-        var data = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+        var artists = await _db.Artists
+            .Include(a => a.Genre)
+            .OrderBy(a => a.Name)
             .ToListAsync();
 
-        var dataDto = _mapper.Map<List<ArtistDto>>(data);
-
-        return Ok(new
+        var dtos = artists.Select(a => new ArtistDto
         {
-            page,
-            pageSize,
-            totalCount,
-            totalPages = (int)Math.Ceiling((double)totalCount / pageSize),
-            data = dataDto
+            Id = a.Id,
+            Name = a.Name,
+            Bio = a.Bio,
+            GenreId = a.GenreId,
+            GenreName = a.Genre?.Name
+        }).ToList();
+
+        return Ok(dtos);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<ArtistDto>> GetById(int id)
+    {
+        var artist = await _db.Artists
+            .Include(a => a.Genre)
+            .FirstOrDefaultAsync(a => a.Id == id);
+        
+        if (artist == null)
+            return NotFound(new { error = $"Artista com ID {id} não encontrado." });
+
+        return Ok(new ArtistDto
+        {
+            Id = artist.Id,
+            Name = artist.Name,
+            Bio = artist.Bio,
+            GenreId = artist.GenreId,
+            GenreName = artist.Genre?.Name
         });
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateArtist([FromBody] ArtistDto dto)
+    public async Task<ActionResult<ArtistDto>> Create([FromBody] ArtistDto dto)
     {
-        var artist = _mapper.Map<Artist>(dto);
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { error = "Nome do artista é obrigatório." });
+
+        var genreExists = await _db.Genres.AnyAsync(g => g.Id == dto.GenreId);
+        if (!genreExists)
+            return BadRequest(new { error = $"Gênero com ID {dto.GenreId} não encontrado." });
+
+        var artist = new Artist
+        {
+            Name = dto.Name,
+            Bio = dto.Bio,
+            GenreId = dto.GenreId
+        };
+
         _db.Artists.Add(artist);
         await _db.SaveChangesAsync();
-        
-        var createdDto = _mapper.Map<ArtistDto>(artist);
-        return Created($"/artists/{artist.Id}", createdDto);
+
+        await _db.Entry(artist).Reference(a => a.Genre).LoadAsync();
+
+        return Created($"/api/artists/{artist.Id}", new ArtistDto
+        {
+            Id = artist.Id,
+            Name = artist.Name,
+            Bio = artist.Bio,
+            GenreId = artist.GenreId,
+            GenreName = artist.Genre?.Name
+        });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ArtistDto>> Update(int id, [FromBody] ArtistDto dto)
+    {
+        var artist = await _db.Artists.FindAsync(id);
+        if (artist == null)
+            return NotFound(new { error = $"Artista com ID {id} não encontrado." });
+
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest(new { error = "Nome do artista é obrigatório." });
+
+        var genreExists = await _db.Genres.AnyAsync(g => g.Id == dto.GenreId);
+        if (!genreExists)
+            return BadRequest(new { error = $"Gênero com ID {dto.GenreId} não encontrado." });
+
+        artist.Name = dto.Name;
+        artist.Bio = dto.Bio;
+        artist.GenreId = dto.GenreId;
+
+        await _db.SaveChangesAsync();
+
+        await _db.Entry(artist).Reference(a => a.Genre).LoadAsync();
+
+        return Ok(new ArtistDto
+        {
+            Id = artist.Id,
+            Name = artist.Name,
+            Bio = artist.Bio,
+            GenreId = artist.GenreId,
+            GenreName = artist.Genre?.Name
+        });
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteArtist(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        if (await _db.Artists.FindAsync(id) is Artist a)
-        {
-            _db.Artists.Remove(a);
-            await _db.SaveChangesAsync();
-            
-            var deletedDto = _mapper.Map<ArtistDto>(a);
-            return Ok(deletedDto);
-        }
-        return NotFound();
+        var artist = await _db.Artists.FindAsync(id);
+        if (artist == null)
+            return NotFound(new { error = $"Artista com ID {id} não encontrado." });
+
+        _db.Artists.Remove(artist);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 }
